@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Lappy Logistics Automation
 
 A starter scaffold for a Unified IT Asset Request & Lifecycle Management Platform.
@@ -58,3 +59,7 @@ Copy values from `.env.example` into your local environment configuration before
 ### UI Behavior
 
 If intake is captured but email delivery is not configured or fails, the page now shows that explicitly after submit instead of implying that the user was notified.
+=======
+# LogisticsLappyAutomation
+Making sure I am making things easy for Logistics and Support Team by building an Application and providing EMail configurations so that they receive their emails and able to approve requests accordingly, track the laptop assets accordingly by automated emails.
+>>>>>>> 7e94909973590a1c3b98e70c1d6f5f84cf7e0b88
