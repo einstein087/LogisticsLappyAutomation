@@ -1,0 +1,12 @@
+{% set colour_map = {
+  'pending':     'warning',
+  'approved':    'success',
+  'rejected':    'danger',
+  'in_progress': 'info',
+  'dispatched':  'primary',
+  'delivered':   'secondary',
+  'cancelled':   'dark',
+} %}
+<span class="badge bg-{{ colour_map.get(r.status, 'light') }} text-dark">
+  {{ r.status_label() }}
+</span>

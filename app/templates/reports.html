@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Compliance Reports{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2 class="mb-0"><i class="bi bi-file-earmark-spreadsheet me-2"></i>Weekly Compliance Reports</h2>
+  <form method="post" action="{{ url_for('reports.generate') }}" class="d-inline">
+    <button type="submit" class="btn btn-success">
+      <i class="bi bi-arrow-clockwise me-1"></i>Generate Now
+    </button>
+  </form>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead class="table-dark">
+        <tr>
+          <th>Filename</th>
+          <th>Download</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for f in files %}
+        <tr>
+          <td><i class="bi bi-file-earmark-excel text-success me-2"></i>{{ f }}</td>
+          <td>
+            <a href="{{ url_for('reports.download', filename=f) }}"
+               class="btn btn-sm btn-outline-success">
+              <i class="bi bi-download me-1"></i>Download
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="2" class="text-center text-muted py-4">
+            No reports generated yet. Click "Generate Now" to create the first one.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<p class="text-muted small mt-3">
+  <i class="bi bi-info-circle me-1"></i>
+  Reports are automatically generated every
+  <strong>{{ config.REPORT_DAY_OF_WEEK | upper }}</strong> at
+  <strong>{{ '%02d:%02d'|format(config.REPORT_HOUR, config.REPORT_MINUTE) }}</strong>
+  and archived to SharePoint.
+</p>
+{% endblock %}

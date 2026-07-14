@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}New Laptop Request{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <h2 class="mb-4"><i class="bi bi-plus-circle me-2"></i>New Laptop Provisioning Request</h2>
+
+    <form method="post" novalidate>
+      <div class="card shadow-sm mb-4">
+        <div class="card-header fw-semibold">Requester Details</div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Your Name <span class="text-danger">*</span></label>
+              <input type="text" name="requester_name" class="form-control"
+                     value="{{ form.get('requester_name', '') }}" required/>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Your Email <span class="text-danger">*</span></label>
+              <input type="email" name="requester_email" class="form-control"
+                     value="{{ form.get('requester_email', '') }}" required/>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card shadow-sm mb-4">
+        <div class="card-header fw-semibold">Employee Being Provisioned</div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Employee Name <span class="text-danger">*</span></label>
+              <input type="text" name="employee_name" class="form-control"
+                     value="{{ form.get('employee_name', '') }}" required/>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Employee Email <span class="text-danger">*</span></label>
+              <input type="email" name="employee_email" class="form-control"
+                     value="{{ form.get('employee_email', '') }}" required/>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Department <span class="text-danger">*</span></label>
+              <input type="text" name="department" class="form-control"
+                     value="{{ form.get('department', '') }}" required/>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Oracle Reference</label>
+              <input type="text" name="oracle_ref" class="form-control"
+                     placeholder="e.g. SR-12345"
+                     value="{{ form.get('oracle_ref', '') }}"/>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card shadow-sm mb-4">
+        <div class="card-header fw-semibold">Manager (Approver)</div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Manager Name <span class="text-danger">*</span></label>
+              <input type="text" name="manager_name" class="form-control"
+                     value="{{ form.get('manager_name', '') }}" required/>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Manager Email <span class="text-danger">*</span></label>
+              <input type="email" name="manager_email" class="form-control"
+                     value="{{ form.get('manager_email', '') }}" required/>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card shadow-sm mb-4">
+        <div class="card-header fw-semibold">Laptop &amp; Priority</div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Laptop Model</label>
+              <input type="text" name="laptop_model" class="form-control"
+                     placeholder="e.g. Dell Latitude 5540"
+                     value="{{ form.get('laptop_model', '') }}"/>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Priority</label>
+              <select name="priority" class="form-select">
+                {% for p in priorities %}
+                  <option value="{{ p }}" {% if form.get('priority', 'normal') == p %}selected{% endif %}>
+                    {{ p.title() }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Notes / Justification</label>
+              <textarea name="notes" class="form-control" rows="3">{{ form.get('notes', '') }}</textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-send me-1"></i>Submit Request
+        </button>
+        <a href="{{ url_for('dashboard.index') }}" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

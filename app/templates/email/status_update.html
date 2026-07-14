@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Laptop Request Status Update</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 30px auto; background: #fff; border-radius: 8px;
+                 overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+    .header { background: #0d6efd; color: #fff; padding: 24px 32px; }
+    .header h1 { margin: 0; font-size: 22px; }
+    .body { padding: 28px 32px; }
+    .table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+    .table td { padding: 8px 12px; border-bottom: 1px solid #eee; font-size: 14px; }
+    .table td:first-child { color: #666; width: 40%; }
+    .status { display: inline-block; padding: 4px 12px; border-radius: 4px; font-weight: bold;
+              font-size: 14px; margin-bottom: 16px; }
+    .status-approved    { background: #d4edda; color: #155724; }
+    .status-rejected    { background: #f8d7da; color: #721c24; }
+    .status-in_progress { background: #cce5ff; color: #004085; }
+    .status-dispatched  { background: #d6eaf8; color: #1a5276; }
+    .status-delivered   { background: #c3e6cb; color: #155724; }
+    .status-cancelled   { background: #e2e3e5; color: #383d41; }
+    .footer { background: #f8f9fa; color: #999; font-size: 12px; padding: 16px 32px;
+              text-align: center; border-top: 1px solid #eee; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>💻 Laptop Request Update</h1>
+  </div>
+  <div class="body">
+    <p>Hi <strong>{{ req.employee_name }}</strong>,</p>
+    <p>Your laptop provisioning request status has been updated:</p>
+
+    <span class="status status-{{ req.status }}">{{ req.status_label() }}</span>
+
+    <table class="table">
+      <tr><td>Request #</td><td><strong>{{ req.id }}</strong></td></tr>
+      <tr><td>Employee</td><td>{{ req.employee_name }}</td></tr>
+      <tr><td>Department</td><td>{{ req.department }}</td></tr>
+      {% if req.laptop_model %}
+      <tr><td>Laptop Model</td><td>{{ req.laptop_model }}</td></tr>
+      {% endif %}
+      {% if req.asset_tag %}
+      <tr><td>Asset Tag</td><td>{{ req.asset_tag }}</td></tr>
+      {% endif %}
+    </table>
+
+    {% if req.status == 'dispatched' %}
+    <p>🚚 Your laptop is on its way! You will be notified once it has been delivered.</p>
+    {% elif req.status == 'delivered' %}
+    <p>🎉 Your laptop has been delivered. Please check your asset and confirm receipt with the Service Desk.</p>
+    {% elif req.status == 'rejected' %}
+    <p>Your request has been declined by your manager. Please contact the Service Desk or your manager if you have questions.</p>
+    {% endif %}
+  </div>
+  <div class="footer">
+    LappyAutomation &bull; Logistics &amp; Support Automation Platform<br>
+    This is an automated message. Do not reply directly to this email.
+  </div>
+</div>
+</body>
+</html>

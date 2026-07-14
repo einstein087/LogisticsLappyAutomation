@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Laptop Provisioning – Approval Required</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 30px auto; background: #fff; border-radius: 8px;
+                 overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+    .header { background: #343a40; color: #fff; padding: 24px 32px; }
+    .header h1 { margin: 0; font-size: 22px; }
+    .body { padding: 28px 32px; }
+    .table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+    .table td { padding: 8px 12px; border-bottom: 1px solid #eee; font-size: 14px; }
+    .table td:first-child { color: #666; width: 40%; }
+    .btn { display: inline-block; padding: 14px 28px; border-radius: 6px; text-decoration: none;
+           font-size: 16px; font-weight: bold; margin: 6px 4px; }
+    .btn-approve { background: #198754; color: #fff; }
+    .btn-reject  { background: #dc3545; color: #fff; }
+    .footer { background: #f8f9fa; color: #999; font-size: 12px; padding: 16px 32px;
+              text-align: center; border-top: 1px solid #eee; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>💻 Laptop Provisioning – Approval Required</h1>
+  </div>
+  <div class="body">
+    <p>Hi <strong>{{ req.manager_name }}</strong>,</p>
+    <p>A laptop provisioning request has been submitted and requires your approval.</p>
+
+    <table class="table">
+      <tr><td>Employee</td><td><strong>{{ req.employee_name }}</strong></td></tr>
+      <tr><td>Employee Email</td><td>{{ req.employee_email }}</td></tr>
+      <tr><td>Department</td><td>{{ req.department }}</td></tr>
+      <tr><td>Requested By</td><td>{{ req.requester_name }} ({{ req.requester_email }})</td></tr>
+      <tr><td>Laptop Model</td><td>{{ req.laptop_model or 'To be determined' }}</td></tr>
+      <tr><td>Priority</td><td>{{ req.priority.title() }}</td></tr>
+      {% if req.oracle_ref %}
+      <tr><td>Oracle Reference</td><td>{{ req.oracle_ref }}</td></tr>
+      {% endif %}
+      {% if req.notes %}
+      <tr><td>Notes</td><td>{{ req.notes }}</td></tr>
+      {% endif %}
+    </table>
+
+    <p><strong>Please action this request using the buttons below:</strong></p>
+    <p>
+      <a href="{{ approve_url }}" class="btn btn-approve">✅ Approve</a>
+      &nbsp;&nbsp;
+      <a href="{{ reject_url }}" class="btn btn-reject">❌ Reject</a>
+    </p>
+    <p style="font-size:12px; color:#666;">
+      These links are single-use and expire in 7 days. If you have already actioned this request,
+      please disregard this email.
+    </p>
+  </div>
+  <div class="footer">
+    LappyAutomation &bull; Logistics &amp; Support Automation Platform<br>
+    This is an automated message. Do not reply directly to this email.
+  </div>
+</div>
+</body>
+</html>

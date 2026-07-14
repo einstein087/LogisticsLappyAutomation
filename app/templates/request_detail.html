@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}Request #{{ req.id }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mb-0">
+    <i class="bi bi-laptop me-2"></i>Request #{{ req.id }}
+    {% with r = req %}{% include 'partials/status_badge.html' %}{% endwith %}
+    {% with r = req %}{% include 'partials/priority_badge.html' %}{% endwith %}
+  </h2>
+  <a href="{{ url_for('requests.list_requests') }}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-left me-1"></i>Back
+  </a>
+</div>
+
+<div class="row g-4">
+  <!-- Left column: details -->
+  <div class="col-lg-8">
+    <!-- Employee & Requester info -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header fw-semibold">Request Details</div>
+      <div class="card-body">
+        <div class="row g-2 small">
+          <div class="col-sm-6">
+            <span class="text-muted">Employee</span><br>
+            <strong>{{ req.employee_name }}</strong><br>
+            <a href="mailto:{{ req.employee_email }}">{{ req.employee_email }}</a>
+          </div>
+          <div class="col-sm-6">
+            <span class="text-muted">Department</span><br>
+            <strong>{{ req.department }}</strong>
+          </div>
+          <div class="col-sm-6">
+            <span class="text-muted">Requester</span><br>
+            {{ req.requester_name }}<br>
+            <a href="mailto:{{ req.requester_email }}">{{ req.requester_email }}</a>
+          </div>
+          <div class="col-sm-6">
+            <span class="text-muted">Manager (Approver)</span><br>
+            {{ req.manager_name }}<br>
+            <a href="mailto:{{ req.manager_email }}">{{ req.manager_email }}</a>
+          </div>
+          <div class="col-sm-6">
+            <span class="text-muted">Laptop Model</span><br>
+            {{ req.laptop_model or '—' }}
+          </div>
+          <div class="col-sm-6">
+            <span class="text-muted">Asset Tag</span><br>
+            {{ req.asset_tag or '—' }}
+          </div>
+          <div class="col-sm-6">
+            <span class="text-muted">Oracle Reference</span><br>
+            {{ req.oracle_ref or '—' }}
+          </div>
+          <div class="col-sm-6">
+            <span class="text-muted">Notes</span><br>
+            {{ req.notes or '—' }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header fw-semibold">Timeline</div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <tbody>
+            <tr>
+              <td class="text-muted">Requested</td>
+              <td>{{ req.created_at.strftime('%d %b %Y %H:%M') }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">Approved</td>
+              <td>{{ req.approved_at.strftime('%d %b %Y %H:%M') if req.approved_at else '—' }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">Dispatched</td>
+              <td>{{ req.dispatched_at.strftime('%d %b %Y %H:%M') if req.dispatched_at else '—' }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">Delivered</td>
+              <td>{{ req.delivered_at.strftime('%d %b %Y %H:%M') if req.delivered_at else '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Update status form (Service Desk) -->
+    {% if req.status not in ['delivered', 'cancelled', 'rejected'] %}
+    <div class="card shadow-sm border-primary">
+      <div class="card-header fw-semibold text-primary">Update Status (Service Desk)</div>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('requests.update_status', request_id=req.id) }}">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">New Status</label>
+              <select name="status" class="form-select">
+                {% for s in updatable_statuses %}
+                  <option value="{{ s }}">{{ s.replace('_',' ').title() }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Asset Tag</label>
+              <input type="text" name="asset_tag" class="form-control"
+                     value="{{ req.asset_tag or '' }}" placeholder="e.g. LT-0042"/>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Laptop Model</label>
+              <input type="text" name="laptop_model" class="form-control"
+                     value="{{ req.laptop_model or '' }}"/>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Your Email (actor)</label>
+              <input type="email" name="actor" class="form-control"
+                     placeholder="servicedesk@company.com"/>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Notes</label>
+              <textarea name="notes" class="form-control" rows="2"></textarea>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary mt-3">
+            <i class="bi bi-arrow-up-circle me-1"></i>Update
+          </button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Right column: audit log -->
+  <div class="col-lg-4">
+    <div class="card shadow-sm">
+      <div class="card-header fw-semibold"><i class="bi bi-journal-text me-2"></i>Audit Log</div>
+      <ul class="list-group list-group-flush">
+        {% for log in logs %}
+        <li class="list-group-item px-3 py-2">
+          <div class="small fw-semibold">{{ log.action.replace('_',' ').title() }}</div>
+          <div class="text-muted" style="font-size:.77rem">
+            {{ log.actor }}<br>
+            {{ log.timestamp.strftime('%d %b %Y %H:%M') }}
+          </div>
+          {% if log.detail %}
+          <div class="text-muted" style="font-size:.77rem">{{ log.detail }}</div>
+          {% endif %}
+        </li>
+        {% else %}
+        <li class="list-group-item text-muted text-center py-3">No log entries.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

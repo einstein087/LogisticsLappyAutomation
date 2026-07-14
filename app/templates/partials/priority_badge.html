@@ -1,0 +1,2 @@
+{% set p_map = {'urgent': 'danger', 'high': 'warning', 'normal': 'info', 'low': 'secondary'} %}
+<span class="badge bg-{{ p_map.get(r.priority, 'secondary') }}">{{ r.priority.title() }}</span>

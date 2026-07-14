@@ -1,0 +1,42 @@
+/* ─── LappyAutomation custom styles ─────────────────────────────────────── */
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f0f2f5;
+}
+
+.container-fluid {
+  flex: 1;
+}
+
+.footer {
+  font-size: .80rem;
+}
+
+/* Clickable table rows */
+tr.cursor-pointer {
+  cursor: pointer;
+}
+tr.cursor-pointer:hover td {
+  background-color: rgba(13, 110, 253, .05);
+}
+
+/* Status cards hover effect */
+.status-card {
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.status-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 .5rem 1rem rgba(0,0,0,.12) !important;
+}
+
+/* Audit log condensed */
+.list-group-item {
+  font-size: .85rem;
+}
+
+/* Approval email button preview (not used in app, but used if referencing here) */
+.btn-approve-preview { background: #198754; color: #fff; }
+.btn-reject-preview  { background: #dc3545; color: #fff; }
