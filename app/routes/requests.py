@@ -91,7 +91,7 @@ def new_request():
             flash("Request submitted – approval email sent to manager.", "success")
         except Exception as exc:  # noqa: BLE001
             logger.warning("Failed to send approval email for request %s: %s", req.id, exc)
-            flash("Request submitted. (Approval email could not be delivered – please check SMTP settings.)", "warning")
+            flash("Request submitted. (Approval email could not be delivered – please contact IT support.)", "warning")
 
         return redirect(url_for("requests.detail", request_id=req.id))
 

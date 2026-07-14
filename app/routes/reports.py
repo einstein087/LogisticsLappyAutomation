@@ -1,11 +1,12 @@
 """
 Reports blueprint.
 
-GET  /reports              – list generated reports
-POST /reports/generate     – manually trigger weekly report generation
-GET  /reports/<filename>   – download a report file
+GET  /reports              - list generated reports
+POST /reports/generate     - manually trigger weekly report generation
+GET  /reports/<filename>   - download a report file
 """
 import os
+import re
 import logging
 
 from flask import Blueprint, render_template, redirect, url_for, flash, send_from_directory, abort, current_app
@@ -15,6 +16,9 @@ from app.services import report_service
 logger = logging.getLogger(__name__)
 
 bp = Blueprint("reports", __name__, url_prefix="/reports")
+
+# Only allow report filenames matching the generated pattern (no path traversal possible)
+_SAFE_FILENAME_RE = re.compile(r'^[\w\-]+\.xlsx$')
 
 
 def _reports_dir() -> str:
@@ -43,17 +47,20 @@ def generate():
         flash(msg, "success")
     except Exception as exc:  # noqa: BLE001
         logger.error("Report generation failed: %s", exc)
-        flash(f"Report generation failed: {exc}", "danger")
+        flash("Report generation failed. Please contact your administrator.", "danger")
     return redirect(url_for("reports.list_reports"))
 
 
-@bp.route("/download/<path:filename>")
+@bp.route("/download/<filename>")
 def download(filename: str):
     rdir = os.path.abspath(_reports_dir())
-    # Security: prevent path traversal
-    full_path = os.path.abspath(os.path.join(rdir, filename))
-    if not full_path.startswith(rdir + os.sep) and full_path != rdir:
+    # Strict allowlist: only alphanumeric/underscore/hyphen filenames with .xlsx extension
+    if not _SAFE_FILENAME_RE.match(filename):
         abort(400, "Invalid filename.")
-    if not os.path.isfile(full_path):
+    # Verify the file actually exists in the reports directory
+    if not os.path.isdir(rdir):
+        abort(404)
+    available = set(os.listdir(rdir))
+    if filename not in available:
         abort(404)
     return send_from_directory(rdir, filename, as_attachment=True)
