@@ -20,6 +20,8 @@ export const saveLocalRequest = (record: LocalRequestRecord) => {
 
 export const getLocalRequest = (requestId: string) => store.get(requestId);
 
+export const getAllLocalRequests = () => Array.from(store.values());
+
 export const updateLocalRequestStatus = (requestId: string, status: string) => {
   const existing = store.get(requestId);
   if (!existing) {

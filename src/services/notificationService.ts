@@ -3,7 +3,6 @@ import axios from "axios";
 import nodemailer from "nodemailer";
 import { info, warn, error } from "../utils/logger";
 
-const EMAIL_WEBHOOK_URL = process.env.EMAIL_WEBHOOK_URL?.trim() || "";
 const SMS_WEBHOOK_URL = process.env.SMS_WEBHOOK_URL?.trim() || "";
 const SMTP_HOST = process.env.SMTP_HOST?.trim() || "";
 const SMTP_PORT = Number(process.env.SMTP_PORT ?? "587");
@@ -20,7 +19,14 @@ export interface UserNotificationRequest {
   email?: string;
   phone?: string;
   pickupLocation?: string;
+  pickupContactName?: string;
+  pickupContactPhone?: string;
   dropLocation?: string;
+  dropContactName?: string;
+  dropContactPhone?: string;
+  assetType?: string;
+  assetTag?: string;
+  accessories?: string;
   currentStatus?: string;
 }
 
@@ -39,7 +45,7 @@ export interface NotificationResult {
 export interface NotificationConfigStatus {
   email: {
     configured: boolean;
-    mode: "webhook" | "smtp" | "unconfigured";
+    mode: "smtp" | "unconfigured";
     detail: string;
   };
   sms: {
@@ -57,7 +63,10 @@ const buildSubject = (request: UserNotificationRequest) =>
 
 const buildMessage = (request: UserNotificationRequest) => (
   `Hi ${request.fullName || "User"}, your request ${request.requestId} has been captured. `
-  + `Current status: ${request.currentStatus || "Pending Pickup"}.`
+  + `Current status: ${request.currentStatus || "Pending Pickup"}.\n`
+  + `Pickup: ${request.pickupLocation || "Source"} | Contact: ${request.pickupContactName || "N/A"} | Phone: ${request.pickupContactPhone || "N/A"}.\n`
+  + `Drop: ${request.dropLocation || "Destination"} | Contact: ${request.dropContactName || "N/A"} | Phone: ${request.dropContactPhone || "N/A"}.\n`
+  + `Asset: ${request.assetType || "N/A"} | Tag: ${request.assetTag || "N/A"} | Accessories: ${request.accessories || "N/A"}.`
 );
 
 const buildHtmlMessage = (request: UserNotificationRequest) => `
@@ -66,7 +75,48 @@ const buildHtmlMessage = (request: UserNotificationRequest) => `
     <p>Hi ${request.fullName || "User"},</p>
     <p>Your request <strong>${request.requestId}</strong> has been captured.</p>
     <p><strong>Status:</strong> ${request.currentStatus || "Pending Pickup"}</p>
-    <p><strong>Route:</strong> ${request.pickupLocation || "Source"} to ${request.dropLocation || "Destination"}</p>
+    <table style="width:100%;border-collapse:collapse;margin-top:12px;">
+      <tr>
+        <th style="border:1px solid #e6e6e6;background-color:#f5f5f5;padding:8px;text-align:left;">Field</th>
+        <th style="border:1px solid #e6e6e6;background-color:#f5f5f5;padding:8px;text-align:left;">Value</th>
+      </tr>
+      <tr>
+        <td style="border:1px solid #e6e6e6;padding:8px;">Pickup Location</td>
+        <td style="border:1px solid #e6e6e6;padding:8px;">${request.pickupLocation || "Source"}</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #e6e6e6;padding:8px;">Pickup Contact</td>
+        <td style="border:1px solid #e6e6e6;padding:8px;">${request.pickupContactName || "N/A"}</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #e6e6e6;padding:8px;">Pickup Phone</td>
+        <td style="border:1px solid #e6e6e6;padding:8px;">${request.pickupContactPhone || "N/A"}</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #e6e6e6;padding:8px;">Drop Location</td>
+        <td style="border:1px solid #e6e6e6;padding:8px;">${request.dropLocation || "Destination"}</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #e6e6e6;padding:8px;">Drop Contact</td>
+        <td style="border:1px solid #e6e6e6;padding:8px;">${request.dropContactName || "N/A"}</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #e6e6e6;padding:8px;">Drop Phone</td>
+        <td style="border:1px solid #e6e6e6;padding:8px;">${request.dropContactPhone || "N/A"}</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #e6e6e6;padding:8px;">Asset Type</td>
+        <td style="border:1px solid #e6e6e6;padding:8px;">${request.assetType || "N/A"}</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #e6e6e6;padding:8px;">Asset Tag</td>
+        <td style="border:1px solid #e6e6e6;padding:8px;">${request.assetTag || "N/A"}</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #e6e6e6;padding:8px;">Accessories</td>
+        <td style="border:1px solid #e6e6e6;padding:8px;">${request.accessories || "N/A"}</td>
+      </tr>
+    </table>
   </div>
 `;
 
@@ -81,12 +131,40 @@ const buildManagerApprovalHtml = (request: ManagerApprovalRequest) => `
         <th style="border:1px solid #e6e6e6;background-color:#f5f5f5;padding:8px;text-align:left;">Value</th>
       </tr>
       <tr>
-        <td style="border:1px solid #e6e6e6;padding:8px;">Pickup</td>
+        <td style="border:1px solid #e6e6e6;padding:8px;">Pickup Location</td>
         <td style="border:1px solid #e6e6e6;padding:8px;">${request.pickupLocation || "Source"}</td>
       </tr>
       <tr>
-        <td style="border:1px solid #e6e6e6;padding:8px;">Delivery</td>
+        <td style="border:1px solid #e6e6e6;padding:8px;">Pickup Contact</td>
+        <td style="border:1px solid #e6e6e6;padding:8px;">${request.pickupContactName || "N/A"}</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #e6e6e6;padding:8px;">Pickup Phone</td>
+        <td style="border:1px solid #e6e6e6;padding:8px;">${request.pickupContactPhone || "N/A"}</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #e6e6e6;padding:8px;">Drop Location</td>
         <td style="border:1px solid #e6e6e6;padding:8px;">${request.dropLocation || "Destination"}</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #e6e6e6;padding:8px;">Drop Contact</td>
+        <td style="border:1px solid #e6e6e6;padding:8px;">${request.dropContactName || "N/A"}</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #e6e6e6;padding:8px;">Drop Phone</td>
+        <td style="border:1px solid #e6e6e6;padding:8px;">${request.dropContactPhone || "N/A"}</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #e6e6e6;padding:8px;">Asset Type</td>
+        <td style="border:1px solid #e6e6e6;padding:8px;">${request.assetType || "N/A"}</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #e6e6e6;padding:8px;">Asset Tag</td>
+        <td style="border:1px solid #e6e6e6;padding:8px;">${request.assetTag || "N/A"}</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #e6e6e6;padding:8px;">Accessories</td>
+        <td style="border:1px solid #e6e6e6;padding:8px;">${request.accessories || "N/A"}</td>
       </tr>
       <tr>
         <td style="border:1px solid #e6e6e6;padding:8px;">Status</td>
@@ -127,23 +205,17 @@ const createSmtpTransport = () => {
 };
 
 export const getNotificationConfigStatus = (): NotificationConfigStatus => ({
-  email: EMAIL_WEBHOOK_URL
+  email: hasSmtpConfig()
     ? {
         configured: true,
-        mode: "webhook",
-        detail: "Email delivery is configured through EMAIL_WEBHOOK_URL.",
+        mode: "smtp",
+        detail: "Email delivery is configured through SMTP settings.",
       }
-    : hasSmtpConfig()
-      ? {
-          configured: true,
-          mode: "smtp",
-          detail: "Email delivery is configured through SMTP settings.",
-        }
-      : {
-          configured: false,
-          mode: "unconfigured",
-          detail: "Set EMAIL_WEBHOOK_URL or SMTP_* variables to send user emails.",
-        },
+    : {
+        configured: false,
+        mode: "unconfigured",
+        detail: "Set SMTP_* variables to send user emails.",
+      },
   sms: SMS_WEBHOOK_URL
     ? {
         configured: true,
@@ -168,18 +240,6 @@ const sendConfiguredEmail = async (payload: {
   requestId: string;
   extra?: Record<string, unknown>;
 }) => {
-  if (EMAIL_WEBHOOK_URL) {
-    await axios.post(EMAIL_WEBHOOK_URL, {
-      to: payload.to,
-      subject: payload.subject,
-      message: payload.message,
-      html: payload.html,
-      requestId: payload.requestId,
-      ...payload.extra,
-    });
-    return;
-  }
-
   const transporter = createSmtpTransport();
   await transporter.sendMail({
     from: SMTP_FROM,
@@ -195,12 +255,12 @@ export const sendEmailNotification = async (request: UserNotificationRequest): P
     return { channel: "email", status: "skipped", detail: "User email is missing." };
   }
 
-  if (!EMAIL_WEBHOOK_URL && !hasSmtpConfig()) {
+  if (!hasSmtpConfig()) {
     warn("Email delivery not configured", { requestId: request.requestId });
     return {
       channel: "email",
       status: "skipped",
-      detail: "Configure EMAIL_WEBHOOK_URL or SMTP_* environment variables.",
+      detail: "Configure SMTP_* environment variables.",
     };
   }
 
@@ -260,12 +320,12 @@ export const triggerUserNotifications = async (request: UserNotificationRequest)
 export const sendManagerApprovalEmail = async (request: ManagerApprovalRequest): Promise<NotificationResult> => {
   const targetEmail = request.managerEmail || MANAGER_APPROVAL_EMAIL;
 
-  if (!EMAIL_WEBHOOK_URL && !hasSmtpConfig()) {
+  if (!hasSmtpConfig()) {
     warn("Manager approval email not configured", { requestId: request.requestId, targetEmail });
     return {
       channel: "email",
       status: "skipped",
-      detail: "Configure EMAIL_WEBHOOK_URL or SMTP_* environment variables.",
+      detail: "Configure SMTP_* environment variables.",
     };
   }
 
@@ -273,7 +333,14 @@ export const sendManagerApprovalEmail = async (request: ManagerApprovalRequest):
     await sendConfiguredEmail({
       to: targetEmail,
       subject: `Approval Required - ${buildSubject(request)}`,
-      message: `Employee: ${request.fullName || "User"}\nRequest ID: ${request.requestId}\nApprove: ${request.approveUrl}\nReject: ${request.rejectUrl}`,
+      message:
+        `Employee: ${request.fullName || "User"}\n`
+        + `Request ID: ${request.requestId}\n`
+        + `Pickup: ${request.pickupLocation || "Source"} | Contact: ${request.pickupContactName || "N/A"} | Phone: ${request.pickupContactPhone || "N/A"}\n`
+        + `Drop: ${request.dropLocation || "Destination"} | Contact: ${request.dropContactName || "N/A"} | Phone: ${request.dropContactPhone || "N/A"}\n`
+        + `Asset: ${request.assetType || "N/A"} | Tag: ${request.assetTag || "N/A"} | Accessories: ${request.accessories || "N/A"}\n`
+        + `Approve: ${request.approveUrl}\n`
+        + `Reject: ${request.rejectUrl}`,
       html: buildManagerApprovalHtml(request),
       requestId: request.requestId,
       extra: {

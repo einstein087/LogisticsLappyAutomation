@@ -1,7 +1,17 @@
 import dotenv from "dotenv";
+import fs from "fs";
+import path from "path";
 
-// Load sample defaults first so local runs work even when only .env.example is populated.
-dotenv.config({ path: ".env.example" });
+const rootDirectory = path.resolve(__dirname, "../../");
+const envExamplePath = path.join(rootDirectory, ".env.example");
+const envPath = path.join(rootDirectory, ".env");
 
-// Load real environment values last so they override defaults from .env.example.
-dotenv.config({ override: true });
+if (fs.existsSync(envExamplePath)) {
+  dotenv.config({ path: envExamplePath });
+}
+
+if (fs.existsSync(envPath)) {
+  dotenv.config({ path: envPath, override: true });
+} else {
+  console.warn("[Lappy] .env file not found at", envPath);
+}

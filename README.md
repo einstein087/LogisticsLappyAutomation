@@ -1,65 +1,49 @@
-<<<<<<< HEAD
-# Lappy Logistics Automation
+# LogisticsLappyAutomation
 
-A starter scaffold for a Unified IT Asset Request & Lifecycle Management Platform.
+A lightweight logistics automation app for laptop pickup, delivery, and approval workflows.
 
 ## Overview
 
-This project is designed to ingest laptop allocation requests from:
-- Oracle request forms
-- ServiceNow catalog tickets
-- Outlook email intake
+This project captures intake requests and sends email notifications via SMTP. It supports:
+- web intake requests
+- Oracle and ServiceNow request endpoints
+- Outlook email ingestion stubs
+- manager approval links via email
+- database-backed intake or local fallback when `DATABASE_URL` is not configured
 
-It enriches requests through Oracle Fusion HCM, manages approval workflows, tracks assets, and generates weekly reports for SharePoint.
+## Project structure
 
-## Project Structure
-
-- `src/index.ts` - application entry point
-- `src/routes/requestRoutes.ts` - inbound request API endpoints
-- `src/services` - integration service stubs for Oracle HCM, ServiceNow, Outlook, reporting, and SharePoint
+- `src/index.ts` - main Express server and web UI
+- `src/routes/requestRoutes.ts` - API endpoints for intake and notification health
+- `src/routes/approvalRoutes.ts` - approval link handling
+- `src/services/notificationService.ts` - SMTP email and optional SMS notifications
 - `src/db.ts` - PostgreSQL connection helper
-- `src/types.ts` - shared request and asset types
+- `src/types.ts` - shared request and approval types
+- `src/services/*` - service integration stubs for Oracle, ServiceNow, Outlook
 - `sql/schema.sql` - database schema definitions
 
-## Next Steps
+## Running locally
 
-1. Add real Oracle HCM API credentials and endpoints.
-2. Implement ServiceNow ticket ingestion and Outlook mailbox parsing.
-3. Wire approvals, escalation timers, and report generation.
-4. Deploy a Power BI dashboard or front-end UI over the normalized request table.
+1. Copy `.env.example` to `.env`.
+2. Set SMTP env vars in `.env`:
+   - `SMTP_HOST`
+   - `SMTP_PORT`
+   - `SMTP_SECURE`
+   - `SMTP_USER`
+   - `SMTP_PASS`
+   - `SMTP_FROM`
+3. Optionally set `DATABASE_URL` for PostgreSQL.
+4. Run `npm install` and `npm run dev` to start the app.
+5. To expose the app publicly via localtunnel, use `node scripts/start-tunnel.js` in a second terminal.
 
-## Email And SMS Notifications
+## Email and SMS notifications
 
-The intake route triggers user notifications after submission.
+- Email is sent via SMTP only. Set the SMTP variables above.
+- SMS is optional. Set `SMS_WEBHOOK_URL` only if SMS notifications are required.
+- Approval link URLs depend on `APP_BASE_URL` and must be reachable from the manager's browser.
 
-### Email
+## Notes
 
-You must configure one of these options:
+- If `DATABASE_URL` is missing, the app stores requests in memory and still sends notifications.
+- If you need a public URL for approvals during local development, use a tunnel and update `APP_BASE_URL`.
 
-1. Webhook mode
-	1. Set `EMAIL_WEBHOOK_URL`
-2. SMTP mode
-	1. Set `SMTP_SERVICE=Gmail` or provide `SMTP_HOST`
-	2. Set `SMTP_PORT`
-	3. Set `SMTP_SECURE`
-	4. Set `SMTP_USER`
-	5. Set `SMTP_PASS`
-	6. Set `SMTP_FROM`
-
-For Gmail, use an app password, not your normal account password.
-
-### SMS
-
-1. Set `SMS_WEBHOOK_URL` to your SMS provider webhook.
-
-### Environment Setup
-
-Copy values from `.env.example` into your local environment configuration before running the app.
-
-### UI Behavior
-
-If intake is captured but email delivery is not configured or fails, the page now shows that explicitly after submit instead of implying that the user was notified.
-=======
-# LogisticsLappyAutomation
-Making sure I am making things easy for Logistics and Support Team by building an Application and providing EMail configurations so that they receive their emails and able to approve requests accordingly, track the laptop assets accordingly by automated emails.
->>>>>>> 7e94909973590a1c3b98e70c1d6f5f84cf7e0b88

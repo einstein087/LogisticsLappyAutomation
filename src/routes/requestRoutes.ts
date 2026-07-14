@@ -1,7 +1,7 @@
 import express from "express";
 import { query, isDbConfigured } from "../db";
 import type { UnifiedRequest } from "../types";
-import { getLocalRequest, saveLocalRequest } from "../services/localRequestStore";
+import { getLocalRequest, getAllLocalRequests, saveLocalRequest } from "../services/localRequestStore";
 import { createApprovalToken } from "../utils/approvalTokens";
 import { encryptText } from "../utils/encryption";
 import { getOutlookMessageText, parseOutlookEmail, fetchRecentLaptopEmails } from "../services/outlookService";
@@ -10,25 +10,67 @@ import { debug, info, warn, error } from "../utils/logger";
 
 const router = express.Router();
 
-router.get("/notifications/health", (req, res) => {
+const asyncHandler = (fn: express.RequestHandler) => (req: express.Request, res: express.Response, next: express.NextFunction) =>
+  Promise.resolve(fn(req, res, next)).catch(next);
+
+const jsonError = (res: express.Response, message: string, status = 500) =>
+  res.status(status).json({ error: message });
+
+router.get("/notifications/health", asyncHandler(async (req, res) => {
   res.json({
     status: "ok",
     notifications: getNotificationConfigStatus(),
   });
-});
+}));
 
-const resolveAppBaseUrl = (req: express.Request) => process.env.APP_BASE_URL?.trim() || `${req.protocol}://${req.get("host")}`;
+router.get("/requests", asyncHandler(async (req, res) => {
+  if (!isDbConfigured()) {
+    return res.json({
+      source: "local",
+      count: getAllLocalRequests().length,
+      requests: getAllLocalRequests(),
+    });
+  }
+
+  try {
+    const result = await query(`
+      SELECT request_id,
+             source_system,
+             employee_id,
+             employee_name,
+             employee_email,
+             project_name,
+             allocation_type,
+             status,
+             created_date,
+             updated_date
+      FROM request_intake
+      ORDER BY created_date DESC
+      LIMIT 50`,
+    []);
+
+    return res.json({
+      source: "database",
+      count: result.rowCount,
+      requests: result.rows,
+    });
+  } catch (err) {
+      error("Failed to load requests", { error: String(err) });
+      return res.status(500).json({ error: "Failed to fetch requests." });
+    }
+  }));
+const resolveRequestBaseUrl = (req: express.Request) => `${req.protocol}://${req.get("host")}`;
 
 const buildApprovalLinks = (req: express.Request, requestId: string) => {
   const token = createApprovalToken(requestId);
-  const baseUrl = resolveAppBaseUrl(req);
+  const baseUrl = resolveRequestBaseUrl(req);
   return {
     approveUrl: `${baseUrl}/approve/${token}`,
     rejectUrl: `${baseUrl}/reject/${token}`,
   };
 };
 
-router.post("/oracle", async (req, res) => {
+router.post("/oracle", asyncHandler(async (req, res) => {
   const request: UnifiedRequest = {
     source_system: "ORACLE",
     ticket_number: req.body.ticket_number,
@@ -70,9 +112,9 @@ router.post("/oracle", async (req, res) => {
     console.error(error);
     res.status(500).json({ error: "Failed to create Oracle request." });
   }
-});
+}));
 
-router.post("/servicenow", async (req, res) => {
+router.post("/servicenow", asyncHandler(async (req, res) => {
   const request: UnifiedRequest = {
     source_system: "SERVICENOW",
     ticket_number: req.body.request_number,
@@ -115,9 +157,9 @@ router.post("/servicenow", async (req, res) => {
     error("ServiceNow request failed", { error: String(err) });
     res.status(500).json({ error: "Failed to create ServiceNow request." });
   }
-});
+}));
 
-router.post("/intake", async (req, res) => {
+router.post("/intake", asyncHandler(async (req, res) => {
   const payload = req.body ?? {};
   const request: UnifiedRequest = {
     source_system: "WEB",
@@ -172,7 +214,14 @@ router.post("/intake", async (req, res) => {
       email: String(payload.email ?? "").trim() || undefined,
       phone: String(payload.phone ?? "").trim() || undefined,
       pickupLocation: request.pickup_details?.location,
+      pickupContactName: request.pickup_details?.name,
+      pickupContactPhone: request.pickup_details?.phone,
       dropLocation: request.delivery_details?.location,
+      dropContactName: request.delivery_details?.name,
+      dropContactPhone: request.delivery_details?.phone,
+      assetType: request.asset_details?.asset_type,
+      assetTag: request.asset_details?.asset_tag,
+      accessories: request.asset_details?.accessories,
       currentStatus: String(payload.currentStatus ?? "").trim() || "Pending Pickup",
     });
     const managerNotification = await sendManagerApprovalEmail({
@@ -180,7 +229,14 @@ router.post("/intake", async (req, res) => {
       fullName: String(payload.fullName ?? "").trim() || undefined,
       email: String(payload.email ?? "").trim() || undefined,
       pickupLocation: request.pickup_details?.location,
+      pickupContactName: request.pickup_details?.name,
+      pickupContactPhone: request.pickup_details?.phone,
       dropLocation: request.delivery_details?.location,
+      dropContactName: request.delivery_details?.name,
+      dropContactPhone: request.delivery_details?.phone,
+      assetType: request.asset_details?.asset_type,
+      assetTag: request.asset_details?.asset_tag,
+      accessories: request.asset_details?.accessories,
       currentStatus: "Pending Approval",
       managerEmail: String(payload.managerEmail ?? "").trim() || undefined,
       approveUrl: approvalLinks.approveUrl,
@@ -259,7 +315,14 @@ router.post("/intake", async (req, res) => {
       email: String(payload.email ?? "").trim() || undefined,
       phone: String(payload.phone ?? "").trim() || undefined,
       pickupLocation: request.pickup_details?.location,
+      pickupContactName: request.pickup_details?.name,
+      pickupContactPhone: request.pickup_details?.phone,
       dropLocation: request.delivery_details?.location,
+      dropContactName: request.delivery_details?.name,
+      dropContactPhone: request.delivery_details?.phone,
+      assetType: request.asset_details?.asset_type,
+      assetTag: request.asset_details?.asset_tag,
+      accessories: request.asset_details?.accessories,
       currentStatus: String(payload.currentStatus ?? "").trim() || "Pending Pickup",
     });
     const managerNotification = await sendManagerApprovalEmail({
@@ -267,7 +330,14 @@ router.post("/intake", async (req, res) => {
       fullName: String(payload.fullName ?? "").trim() || undefined,
       email: String(payload.email ?? "").trim() || undefined,
       pickupLocation: request.pickup_details?.location,
+      pickupContactName: request.pickup_details?.name,
+      pickupContactPhone: request.pickup_details?.phone,
       dropLocation: request.delivery_details?.location,
+      dropContactName: request.delivery_details?.name,
+      dropContactPhone: request.delivery_details?.phone,
+      assetType: request.asset_details?.asset_type,
+      assetTag: request.asset_details?.asset_tag,
+      accessories: request.asset_details?.accessories,
       currentStatus: "Pending Approval",
       managerEmail: String(payload.managerEmail ?? "").trim() || undefined,
       approveUrl: approvalLinks.approveUrl,
@@ -285,9 +355,9 @@ router.post("/intake", async (req, res) => {
     error("Web intake request failed", { error: String(err) });
     res.status(500).json({ error: "Failed to create intake request." });
   }
-});
+}));
 
-router.post("/outlook", async (req, res) => {
+router.post("/outlook", asyncHandler(async (req, res) => {
   const request: UnifiedRequest = {
     source_system: "OUTLOOK",
     employee_id: req.body.employee_id,
@@ -359,18 +429,18 @@ router.post("/outlook", async (req, res) => {
     error("Outlook request failed", { error: String(err) });
     res.status(500).json({ error: "Failed to create Outlook request." });
   }
-});
+}));
 
-router.post("/outlook/parse", (req, res) => {
+router.post("/outlook/parse", asyncHandler(async (req, res) => {
   if (typeof req.body.body !== "string") {
     return res.status(400).json({ error: "Email body is required as plain text." });
   }
 
   const parsed = parseOutlookEmail(req.body.body);
   return res.json(parsed);
-});
+}));
 
-router.post("/outlook/ingest", async (req, res) => {
+router.post("/outlook/ingest", asyncHandler(async (req, res) => {
   try {
     const messages = await fetchRecentLaptopEmails();
     const created: Array<Record<string, unknown>> = [];
@@ -438,6 +508,6 @@ router.post("/outlook/ingest", async (req, res) => {
     console.error(error);
     return res.status(500).json({ error: "Failed to ingest Outlook messages." });
   }
-});
+  }));
 
 export default router;
