@@ -1,0 +1,31 @@
+{
+  "name": "lappy-logistics-automation",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "nodemon --watch src --ext ts,js,mjs,cjs,json --exec \"npx ts-node src/index.ts\"",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "lint": "eslint . --ext .ts",
+    "test:e2e": "node scripts/intake-e2e.playwright.js",
+    "test:e2e:headed": "set HEADED=1&& node scripts/intake-e2e.playwright.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.4",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "nodemailer": "^6.9.15",
+    "pg": "^8.11.2",
+    "pg-format": "^1.0.4"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.17",
+    "@types/nodemailer": "^6.4.15",
+    "@types/node": "^20.14.2",
+    "@types/pg": "^8.20.0",
+    "nodemon": "^3.0.1",
+    "playwright": "^1.55.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.6.2"
+  }
+}
